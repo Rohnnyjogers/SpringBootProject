@@ -1,10 +1,20 @@
 package com.spring.springbootproject.entity;
 
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+
+@Entity
 public class Emission {
+	
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	private int id;
 	
 	private String category;
 	private String gasUnits;
-	private double value;
+	private long value;
 	
 	public Emission() {}
 
@@ -24,11 +34,11 @@ public class Emission {
 		this.gasUnits = gasUnits;
 	}
 
-	public double getValue() {
+	public long getValue() {
 		return value;
 	}
 
-	public void setValue(double value) {
+	public void setValue(long value) {
 		this.value = value;
 	}
 }
