@@ -12,11 +12,20 @@ public class Emission {
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;
 	
+	private String emissionId;
 	private String category;
 	private String gasUnits;
-	private long value;
+	private double value;
 	
 	public Emission() {}
+
+	public String getEmissionId() {
+		return emissionId;
+	}
+
+	public void setEmissionId(String emissionId) {
+		this.emissionId = emissionId;
+	}
 
 	public String getCategory() {
 		return category;
@@ -34,11 +43,11 @@ public class Emission {
 		this.gasUnits = gasUnits;
 	}
 
-	public long getValue() {
+	public double getValue() {
 		return value;
 	}
 
-	public void setValue(long value) {
+	public void setValue(double value) {
 		this.value = value;
 	}
 }
