@@ -5,7 +5,6 @@ import java.util.ArrayList;
 
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -21,36 +20,25 @@ public class SpringbootprojectApplication {
 	public static void main(String[] args) throws ParseException, ParserConfigurationException, SAXException, IOException {
 		
 		Parser parser = new Parser();
-		
-		ArrayList jsonList = parser.parseJSON();
-		ArrayList<Emission> xmlList = parser.parseXML();
-		JSONObject jsonObj = null;
 		EmissionDAO eDAO = new EmissionDAO();
 		
-		for(int i = 0; i < jsonList.size(); i++) {
-			
-			jsonObj = (JSONObject) jsonList.get(i);
-			
-			Emission emission = new Emission();
-			emission.setCategory((String) jsonObj.get("Category"));
-			emission.setGasUnits((String) jsonObj.get("Gas Units"));
-			
-			long value = (long) jsonObj.get("Value");
-			emission.setValue(value);
-
-			
-			eDAO.persist(emission);
-			
-		}
+		parser.setMap(parser.descriptionMap());
 		
-		for(Emission e: xmlList) {
+		ArrayList<Emission> emissionsList = parser.parseJSON();
+		ArrayList<Emission> xmlList = parser.parseXML();
+		
+		// emissionsList.addAll(xmlList);
+		
+		for(Emission e: emissionsList) {
 			
 			eDAO.persist(e);
 		}
 		
-		System.out.println(xmlList);
+		for(Emission e: xmlList) {
+					
+			eDAO.persist(e);
+		}
 		
 		SpringApplication.run(SpringbootprojectApplication.class, args);
 	}
-
 }

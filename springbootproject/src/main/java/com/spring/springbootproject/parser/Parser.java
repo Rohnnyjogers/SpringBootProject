@@ -1,9 +1,11 @@
 package com.spring.springbootproject.parser;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Scanner;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -14,6 +16,10 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -24,14 +30,59 @@ import com.spring.springbootproject.entity.Emission;
 
 public class Parser {
 	
+	private HashMap<String, String> map; 
+	
+	
 	public Parser() {}
 	
+	
+	public void setMap(HashMap<String, String> map){
+		this.map = map;
+	}
+	
+	
+	public HashMap<String, String> descriptionMap() throws IOException {
+		
+		FileInputStream descriptionFile = new FileInputStream("EmissionsDescriptions.xlsx");
+		HashMap<String, String> map = new HashMap<String, String>();
+		
+		XSSFWorkbook workBook = new XSSFWorkbook(descriptionFile);
+		XSSFSheet workSheet = workBook.getSheetAt(0);
+		
+		//Might be diff iterator
+		Iterator<Row> rowIterator = workSheet.iterator();
+		
+		while(rowIterator.hasNext()) {
+			
+			Row row = rowIterator.next();
+			
+			Iterator<Cell> cellIterator = row.cellIterator();
+			
+			while(cellIterator.hasNext()) {
+				
+				Cell cell = cellIterator.next();
+				String cellStr = cell.getStringCellValue();
+				String keyCellStr = cellStr.split(" ")[0];
+
+				map.put(keyCellStr, cellStr);			
+			}
+		}
+		workBook.close();
+		descriptionFile.close();
+		
+		return map;
+	}
+	
+	
 	//Parse JSON function
-	public JSONArray parseJSON() throws FileNotFoundException, ParseException {
+	public ArrayList<Emission> parseJSON() throws ParseException, IOException {
 		
 		//Declare emissions file and empty json string 
 		File jsonFile = new File("GreenhouseGasEmissions2023.json");
 		String jsonStr = "";
+		ArrayList<Emission> jsonEmissions = new ArrayList<Emission>();
+		HashMap<String, String> descriptionMap = map;
+		boolean addEmission = true;
 		
 		//Use a scanner to populate json string with data from file 
 		Scanner scanner = new Scanner(jsonFile);
@@ -47,30 +98,57 @@ public class Parser {
 		
 		for(int i = 0; i < jsonArr.size(); i++) {
 			
+			Emission emission = new Emission();
+			
 			jsonObj = (JSONObject) jsonArr.get(i);
 			
-			Emission emission = new Emission();
-			emission.setCategory((String) jsonObj.get("Category"));
-			emission.setGasUnits((String) jsonObj.get("Gas Units"));
+			String categoryStr = (String) jsonObj.get("Category");
 			
-			double value = ((Number) jsonObj.get("Value")).doubleValue();
-			emission.setValue(value);
 			
-			//System.out.print(value+"\n");
+			String description;
+			
+			if(categoryStr.charAt(0) >= 'A' && categoryStr.charAt(0) <= 'Z') {
+				
+				description = categoryStr;
+			}else {
+				
+				String categoryKeyStr = categoryStr.replace(".", "");
+				description = descriptionMap.get(categoryKeyStr);
+			}
+			
+			double value = 0;
+			try {
+				 value = ((Number) jsonObj.get("Value")).doubleValue();
+			}catch(NumberFormatException e) {
+				addEmission = false;
+			}
+			if(value <= 0) {
+				addEmission = false;
+			}
+			
+			if(addEmission) {
+				
+				emission.setCategory((String) jsonObj.get("Category"));
+				emission.setGasUnits((String) jsonObj.get("Gas Units"));
+				emission.setDescription(description);
+				emission.setValue(value);
+				
+				jsonEmissions.add(emission);
+			}			
 		}
 		
-		return jsonArr;
+		return jsonEmissions;
 	}
+	
 	
 	//Parse XML function
 	public ArrayList<Emission> parseXML () throws ParserConfigurationException, SAXException, IOException {
 		
 		ArrayList<Emission> xmlEmissions = new ArrayList<Emission>();
+		HashMap<String, String> descriptionMap = map;
 		
 		//Declare xml file and create a Document to parse the xml
 		File xmlFile = new File("EmissionDataXml.xml");
-		xmlFile.exists();
-		xmlFile.length();
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		DocumentBuilder db = dbf.newDocumentBuilder();                                                 
 		Document doc = db.parse(xmlFile);
@@ -109,6 +187,20 @@ public class Parser {
 				
 				Node category = element.getElementsByTagName("Category__1_3").item(0);
 				String categoryStr = category.getTextContent();
+				char firstChar = categoryStr.charAt(0);
+				String description;
+				
+				
+				if(categoryStr.charAt(0) >= 'A' && categoryStr.charAt(0) <= 'Z') {
+					
+					description = categoryStr;
+				}else {
+					
+					String categoryKeyStr = categoryStr.replace(".","");					
+					description = descriptionMap.get(categoryKeyStr);
+				}
+				
+				
 							
 				Node gasUnit = element.getElementsByTagName("Gas___Units").item(0);
 				String gasUnitStr = gasUnit.getTextContent();
@@ -122,12 +214,17 @@ public class Parser {
 				}catch(NumberFormatException e) {
 					addEmission = false;
 				}
+				if(valueDbl <= 0) {
+					addEmission = false;
+				}
 				
 				if(addEmission) {
 					
 					Emission e = new Emission();
 					e.setCategory(categoryStr);
 					e.setGasUnits(gasUnitStr);
+					e.setDescription(description);
+					e.setEmissionId();
 					e.setValue(valueDbl);
 					
 					xmlEmissions.add(e);
@@ -135,38 +232,16 @@ public class Parser {
 			}
 		}
 		
+		ArrayList<Emission> returnList = new ArrayList<Emission>();
+		
 		for(Emission e: xmlEmissions) {
-			System.out.println(e.getCategory());
-			System.out.println(e.getGasUnits());
-			System.out.println(e.getValue());
+			
+			if(!returnList.contains(e.getValue())) {
+				
+				returnList.add(e);
+			}
 		}
 		
-		return xmlEmissions;
-	}
-	
-	
-	public static void main(String args[]) throws ParserConfigurationException, SAXException, IOException, ParseException {
-		
-		Parser p = new Parser();
-		ArrayList<Emission> al = p.parseJSON();
-		ArrayList<Emission> al1 = p.parseXML();
-		
-	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+		return returnList;
+	}	
 }
