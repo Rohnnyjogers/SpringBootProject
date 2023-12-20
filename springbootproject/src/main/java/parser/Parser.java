@@ -1,4 +1,5 @@
-package com.spring.springbootproject.parser;
+package parser;
+
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,13 +18,13 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.apache.poi.ss.usermodel.Cell;
 import org.xml.sax.SAXException;
 
 import com.spring.springbootproject.entity.Emission;
@@ -107,7 +108,7 @@ public class Parser {
 			
 			String description;
 			
-			if(categoryStr.charAt(0) >= 'A' && categoryStr.charAt(0) <= 'Z') {
+			if(categoryStr.charAt(0) >= 'A' && categoryStr.charAt(0) <= 'Z' || categoryStr.contains("Cement") || categoryStr.contains("non")) {
 				
 				description = categoryStr;
 			}else {
@@ -131,6 +132,7 @@ public class Parser {
 				emission.setCategory((String) jsonObj.get("Category"));
 				emission.setGasUnits((String) jsonObj.get("Gas Units"));
 				emission.setDescription(description);
+				//emission.setEmissionId();
 				emission.setValue(value);
 				
 				jsonEmissions.add(emission);
@@ -177,7 +179,7 @@ public class Parser {
 				
 				int yearInt = 0;
 				try {
-					 yearInt = Integer.parseInt(yearStr);					
+					yearInt = Integer.parseInt(yearStr);
 				}catch(NumberFormatException e) {
 					addEmission = false;
 				}
@@ -187,11 +189,9 @@ public class Parser {
 				
 				Node category = element.getElementsByTagName("Category__1_3").item(0);
 				String categoryStr = category.getTextContent();
-				char firstChar = categoryStr.charAt(0);
 				String description;
 				
-				
-				if(categoryStr.charAt(0) >= 'A' && categoryStr.charAt(0) <= 'Z') {
+				if(categoryStr.charAt(0) >= 'A' && categoryStr.charAt(0) <= 'Z' || categoryStr.contains("Cement") || categoryStr.contains("non")) {
 					
 					description = categoryStr;
 				}else {
@@ -199,8 +199,6 @@ public class Parser {
 					String categoryKeyStr = categoryStr.replace(".","");					
 					description = descriptionMap.get(categoryKeyStr);
 				}
-				
-				
 							
 				Node gasUnit = element.getElementsByTagName("Gas___Units").item(0);
 				String gasUnitStr = gasUnit.getTextContent();
@@ -224,7 +222,7 @@ public class Parser {
 					e.setCategory(categoryStr);
 					e.setGasUnits(gasUnitStr);
 					e.setDescription(description);
-					e.setEmissionId();
+					//e.setEmissionId();
 					e.setValue(valueDbl);
 					
 					xmlEmissions.add(e);
@@ -232,16 +230,7 @@ public class Parser {
 			}
 		}
 		
-		ArrayList<Emission> returnList = new ArrayList<Emission>();
 		
-		for(Emission e: xmlEmissions) {
-			
-			if(!returnList.contains(e.getValue())) {
-				
-				returnList.add(e);
-			}
-		}
-		
-		return returnList;
+		return xmlEmissions;
 	}	
 }

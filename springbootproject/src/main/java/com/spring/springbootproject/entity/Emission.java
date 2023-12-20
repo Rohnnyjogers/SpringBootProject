@@ -1,9 +1,10 @@
 package com.spring.springbootproject.entity;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 
 @Entity
 public class Emission {
@@ -12,22 +13,26 @@ public class Emission {
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;
 	
-	private static int count;
-	private int emissionId;
+	private static int count = 0;
+//	private Integer emissionId = 0;
+	@Column
 	private String category;
+	@Column
 	private String gasUnits;
+	@Column
 	private String description;
+	@Column
 	private double value;
 	
 	public Emission() {}
 
-	public int getEmissionId() {
-		return emissionId;
-	}
-
-	public void setEmissionId() {
-		this.emissionId = count++;
-	}
+//	public int getEmissionId() {
+//		return emissionId;
+//	}
+//
+//	public void setEmissionId() {
+//		this.emissionId = count++;
+//	}
 
 	public String getCategory() {
 		return category;
